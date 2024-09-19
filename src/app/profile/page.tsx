@@ -1,30 +1,40 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { ROUTES } from '../../constants/routes';
-import { firestore } from '../../firebase/firebaseconfig';
+import { firestore } from '../../firebase/firebaseconfig'; // Import Firestore instance
 import { collection, addDoc, getDocs, deleteDoc, doc } from 'firebase/firestore';
+
+// Define the type for your to-do items
+interface Todo {
+  id: string;
+  text: string;
+  userId: string;
+  createdAt: Date;
+}
 
 const ProfilePage = () => {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
-  const [todos, setTodos] = useState([]);
+  
+  // Define the state with the Todo[] type
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState('');
 
   useEffect(() => {
     if (!loading && (!user || !user.emailVerified)) {
-      router.push(ROUTES.VERIFY_EMAIL);
+      router.push(ROUTES.VERIFY_EMAIL); // Redirect to verify-email page if email is not verified
     }
   }, [user, loading, router]);
 
+  // Fetch the user's todos from Firestore
   const fetchTodos = async () => {
     if (!user) return;
     try {
-      const todosCollection = collection(firestore, 'todos');
+      const todosCollection = collection(firestore, 'todos'); // Collection reference
       const todoSnapshot = await getDocs(todosCollection);
-      const todoList = todoSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const todoList = todoSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Todo));
       setTodos(todoList);
     } catch (error) {
       console.error('Error fetching todos:', error);
@@ -35,6 +45,7 @@ const ProfilePage = () => {
     fetchTodos();
   }, [user]);
 
+  // Handle adding a new to-do
   const handleAddTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTodo.trim()) return;
@@ -45,13 +56,14 @@ const ProfilePage = () => {
         userId: user?.uid,
         createdAt: new Date(),
       });
-      setNewTodo('');
-      fetchTodos();
+      setNewTodo(''); // Clear input
+      fetchTodos(); // Refresh to-do list
     } catch (error) {
       console.error('Error adding todo:', error);
     }
   };
 
+  // Handle deleting a to-do
   const handleDeleteTodo = async (id: string) => {
     try {
       const todoDoc = doc(firestore, 'todos', id);
