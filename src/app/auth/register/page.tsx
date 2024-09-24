@@ -2,79 +2,93 @@
 
 import { useState } from 'react';
 import { registerWithEmailPassword } from '../../../firebase/firebaseauth';
+import { useRouter } from 'next/navigation';
+import { ROUTES } from '../../../constants/routes'; // Import route constants
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const router = useRouter(); // Initialize the router
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Reset errors before attempting registration
+    setMessage(''); // Reset messages
+
     try {
-      await registerWithEmailPassword(email, password);
+      await registerWithEmailPassword(email, password); // Register the user with Firebase auth
       setMessage('Verification email sent. Please check your inbox.');
+
+      // Redirect to verify email page after successful registration
+      router.push(ROUTES.VERIFY_EMAIL);
     } catch (error) {
-      setError('Failed to register.');
+      if (error instanceof Error) {
+        console.error('Registration error:', error);
+        setError(error.message || 'Failed to register. Please try again.');
+      } else {
+        setError('An unknown error occurred. Please try again.');
+      }
     }
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-700">Register</h1>
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-6 text-center text-gray-700">Register</h1>
 
-        {message && (
-          <div className="flex items-center justify-center mb-4 text-green-600">
-            <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <p>{message}</p>
-          </div>
-        )}
+          {message && (
+            <div className="flex items-center justify-center mb-4 text-green-600">
+              <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <p>{message}</p>
+            </div>
+          )}
 
-        {error && (
-          <div className="flex items-center justify-center mb-4 text-red-600">
-            <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <p>{error}</p>
-          </div>
-        )}
+          {error && (
+            <div className="flex items-center justify-center mb-4 text-red-600">
+              <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <p>{error}</p>
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="relative">
-            <input
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="relative">
+              <input
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                required
+              />
+            </div>
 
-          <div className="relative">
-            <input
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-            />
-          </div>
+            <div className="relative">
+              <input
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-300 shadow-lg"
-          >
-            Register
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition duration-300 shadow-lg"
+            >
+              Register
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-export default RegisterPage;
+  export default RegisterPage;

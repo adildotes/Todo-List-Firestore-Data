@@ -11,22 +11,24 @@ const VerifyEmailPage = () => {
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [polling, setPolling] = useState(true);
 
-  // Function to periodically check if the user's email is verified
+  // Check email verification status and stop polling if verified
   const checkEmailVerified = async () => {
     try {
       if (user) {
-        await user.reload(); // Reload the user from Firebase to get the latest email verification status
+        await user.reload(); 
         if (user.emailVerified) {
-          router.push(ROUTES.PROFILE); // Redirect to profile page if email is verified
+          setPolling(false);
+          router.push(ROUTES.PROFILE);
         }
       }
     } catch (err) {
       console.error('Error checking email verification status:', err);
+      setError('Error checking email verification status. Please try again.');
     }
   };
 
-  // Resend the verification email
   const handleResendVerification = async () => {
     if (user) {
       try {
@@ -35,19 +37,31 @@ const VerifyEmailPage = () => {
       } catch (err) {
         setError('Failed to resend verification email.');
       }
-    } else {
-      setError('No user is logged in.');
     }
   };
 
-  // Check periodically if the user has verified their email
+  // Polling logic for checking email verification
   useEffect(() => {
-    const interval = setInterval(() => {
-      checkEmailVerified();
-    }, 5000); // Check every 5 seconds
+    if (!user) return;
 
-    return () => clearInterval(interval); // Cleanup the interval on component unmount
-  }, [user]);
+    checkEmailVerified(); // Check immediately
+
+    const interval = setInterval(() => {
+      if (polling) {
+        checkEmailVerified();
+      }
+    }, 5000);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      setPolling(false); 
+    }, 60000); 
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [user, polling]);
 
   if (loading) return <p>Loading...</p>;
 
@@ -55,12 +69,24 @@ const VerifyEmailPage = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
         <h1 className="text-2xl font-bold mb-6 text-center text-gray-700">Verify Your Email</h1>
+
         {message && <p className="text-green-500 mb-4">{message}</p>}
         {error && <p className="text-red-500 mb-4">{error}</p>}
-        <p className="mb-6 text-gray-600">Please verify your email before accessing your account. Check your inbox for the verification link.</p>
+
+        {polling ? (
+          <p className="mb-6 text-gray-600">
+            We are checking your email verification status...
+          </p>
+        ) : (
+          <p className="mb-6 text-gray-600">
+            Email verification timed out. Please check your inbox and verify your email.
+          </p>
+        )}
+
         <button
           onClick={handleResendVerification}
-          className="bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-600 transition duration-300">
+          className="bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-600 transition duration-300"
+        >
           Resend Verification Email
         </button>
       </div>
